@@ -1,16 +1,13 @@
-terraform {
-  required_providers {
-    azurerm = {
-        source = "hashicorp/azurerm"
-        version = "=3.116.0"
-    }
-  }
-}
+# LOCALS
 
-provider "azurerm" {
-    features {
-      
-    }
+locals {
+  tags = {
+    CreatedBy = var.createdby
+    Deadline  = var.deadline
+    Owner     = var.owner
+    Pod       = var.pod
+    Project   = var.project
+  }
 }
 
 # Create a Resource Group
@@ -18,13 +15,7 @@ resource "azurerm_resource_group" "resource_group" {
     name     = "rg-webapp-demo"
     location = "eastus"
     
-    tags = {
-        CreatedBy = "SebastianBlanco"
-        Deadline = "9-8"
-        Owner = "Pod2"
-        Pod = "2"
-        Project = "Labs"
-  }
+    tags = local.tags
 }
 
 # Create a Storage Account

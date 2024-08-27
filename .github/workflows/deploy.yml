@@ -1,24 +1,49 @@
-name: Authenticate Azure
+name: Deploy Infrastructure
+
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - master
 
 jobs:
-  publish:
+  terraform:
+    name: 'Terraform Apply'
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./infra
+
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v3.6.0
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: 'Log into Azure using github secret AZURE_CREDENTIALS'
-        uses: Azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-          enable-AzPSSession: true
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
 
-      - name: 'Run az commands'
-        run: |
-          az account show
-          az group list
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Extract Azure Credentials
+      id: azure-creds
+      run: |
+        echo "::set-output name=client_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientId)"
+        echo "::set-output name=client_secret::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientSecret)"
+        echo "::set-output name=subscription_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)"
+        echo "::set-output name=tenant_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .tenantId)"
+
+    - name: Initialize Terraform
+      env:
+        ARM_CLIENT_ID: ${{ steps.azure-creds.outputs.client_id }}
+        ARM_CLIENT_SECRET: ${{ steps.azure-creds.outputs.client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ steps.azure-creds.outputs.subscription_id }}
+        ARM_TENANT_ID: ${{ steps.azure-creds.outputs.tenant_id }}
+      run: terraform init -backend-config="resource_group_name=tfstate-resources-franco1" -backend-config="storage_account_name=tfstatedpocfran1" -backend-config="container_name=tfstate-franco1" -backend-config="key=terraform.tfstate"
+
+    - name: Apply Terraform
+      env:
+        ARM_CLIENT_ID: ${{ steps.azure-creds.outputs.client_id }}
+        ARM_CLIENT_SECRET: ${{ steps.azure-creds.outputs.client_secret }}
+        ARM_SUBSCRIPTION_ID: ${{ steps.azure-creds.outputs.subscription_id }}
+        ARM_TENANT_ID: ${{ steps.azure-creds.outputs.tenant_id }}
+      run: terraform apply -auto-approve || echo "Infra already exists"

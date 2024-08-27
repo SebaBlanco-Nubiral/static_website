@@ -10,7 +10,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./infra
+        working-directory: ./infrastructure
 
     steps:
     - name: Checkout code
@@ -38,7 +38,7 @@ jobs:
         ARM_CLIENT_SECRET: ${{ steps.azure-creds.outputs.client_secret }}
         ARM_SUBSCRIPTION_ID: ${{ steps.azure-creds.outputs.subscription_id }}
         ARM_TENANT_ID: ${{ steps.azure-creds.outputs.tenant_id }}
-      run: terraform init -backend-config="resource_group_name=tfstate-resources-franco1" -backend-config="storage_account_name=tfstatedpocfran1" -backend-config="container_name=tfstate-franco1" -backend-config="key=terraform.tfstate"
+      run: terraform init
 
     - name: Apply Terraform
       env:

@@ -24,26 +24,8 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Extract Azure Credentials
-      id: azure-creds
-      run: |
-        echo "::set-output name=client_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientId)"
-        echo "::set-output name=client_secret::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .clientSecret)"
-        echo "::set-output name=subscription_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .subscriptionId)"
-        echo "::set-output name=tenant_id::$(echo '${{ secrets.AZURE_CREDENTIALS }}' | jq -r .tenantId)"
-
-    - name: Initialize Terraform
-      env:
-        ARM_CLIENT_ID: ${{ steps.azure-creds.outputs.client_id }}
-        ARM_CLIENT_SECRET: ${{ steps.azure-creds.outputs.client_secret }}
-        ARM_SUBSCRIPTION_ID: ${{ steps.azure-creds.outputs.subscription_id }}
-        ARM_TENANT_ID: ${{ steps.azure-creds.outputs.tenant_id }}
+    - name: Terraform Init
       run: terraform init
 
-    - name: Apply Terraform
-      env:
-        ARM_CLIENT_ID: ${{ steps.azure-creds.outputs.client_id }}
-        ARM_CLIENT_SECRET: ${{ steps.azure-creds.outputs.client_secret }}
-        ARM_SUBSCRIPTION_ID: ${{ steps.azure-creds.outputs.subscription_id }}
-        ARM_TENANT_ID: ${{ steps.azure-creds.outputs.tenant_id }}
+    - name: Terraform Apply
       run: terraform apply -auto-approve || echo "Infra already exists"
